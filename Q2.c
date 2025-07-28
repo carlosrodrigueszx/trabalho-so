@@ -1,3 +1,4 @@
+#include <stdio.h>
 #define NUM_TERMS 2000000000
 #define NUM_THREADS 16
 #define PARTIAL_NUM_TERMS (( NUM_TERMS ) /( NUM_THREADS ) )
@@ -17,20 +18,27 @@ double partialFormula (int first_therm ) {
   return pi_approximation ;
 }
 
-void * partialProcessing ( void * args ) {
+void* partialProcessing ( void * args ) {
   int first_therm = *(( int *) args ) ;
   // obter tempo de inicio
   int sum = partialFormula ( first_therm ) ;
   // acessar buffer compartilhado
   // obter tempo de fim
   // mostrar TID e tempo empregado
+  return NULL;
 }
 
 int main ( void ) {
+  double pi = 0;
+
   // obter tempo de inicio
-  for(int i = 0; i < NUM_THREADS ; i ++) {
+  for(int i = 0; i < NUM_THREADS ; i++) {
   // criar threads parciais
-}
+  }
+
+  for (int i = 0; i < NUM_TERMS; ++i) {
+    pi += partialFormula(i);
+  }
   // esperar threads terminarem
   // obter tempo de fim
   // mostrar resultado e tempo emprego
