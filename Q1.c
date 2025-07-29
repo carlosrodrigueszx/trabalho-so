@@ -37,7 +37,7 @@ void *producer(void *args) {
 
         pthread_cond_signal(&cond_cheio);
 
-        printf("(P) TID: %d | VALOR: R$ %.0f | ITERACAO: %d | POSICAO: %d\n", tid, valor, i + 1, pos);
+        printf("(P) TID: %d | VALOR: R$ %.0f | ITERACAO: %d\n", tid, valor, i + 1);
 
         pthread_mutex_unlock(&mutex);
 
@@ -82,7 +82,7 @@ void *consumer(void *args) {
         pthread_cond_broadcast(&cond_vazio);
         pthread_mutex_unlock(&mutex);
 
-        printf("(C) TID: %d | CONSUMINDO: [", tid);
+        printf("[");
         for (int i = 0; i < BUFFER_SIZE; i++) {
             printf("R$ %.0f", valores[i]);
             if (i < BUFFER_SIZE - 1) printf(", ");
