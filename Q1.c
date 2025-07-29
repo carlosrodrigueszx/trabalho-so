@@ -16,7 +16,7 @@ pthread_cond_t cond_cheio = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_vazio = PTHREAD_COND_INITIALIZER;
 
 void *producer(void *args) {
-    int tid = *((int *) args);
+    pthread_t tid = pthread_self();
 
     int iteracoes;
     do {
@@ -37,7 +37,7 @@ void *producer(void *args) {
 
         pthread_cond_signal(&cond_cheio);
 
-        printf("(P) TID: %d | VALOR: R$ %.0f | ITERACAO: %d\n", tid, valor, i + 1);
+        printf("(P) TID: %ld | VALOR: R$ %.0f | ITERACAO: %d\n", tid, valor, i + 1);
 
         pthread_mutex_unlock(&mutex);
 
@@ -49,13 +49,13 @@ void *producer(void *args) {
     pthread_cond_signal(&cond_cheio);
     pthread_mutex_unlock(&mutex);
 
-    printf("(P) TID: %d finalizou\n", tid);
+    printf("(P) TID: %ld finalizou\n", tid);
 
     return NULL;
 }
 
 void *consumer(void *args) {
-    int tid = 1003;
+    pthread_t tid = pthread_self();
     int iteracao = 1;
 
     while (1) {
@@ -82,10 +82,10 @@ void *consumer(void *args) {
         pthread_cond_broadcast(&cond_vazio);
         pthread_mutex_unlock(&mutex);
 
-        printf("(C) TID: %d | MEDIA: R$ %.0f | ITERACAO: %d\n", tid, soma / BUFFER_SIZE, iteracao++);
+        printf("(C) TID: %ld | MEDIA: R$ %.0f | ITERACAO: %d\n", tid, soma / BUFFER_SIZE, iteracao++);
     }
 
-    printf("(C) TID: %d finalizou\n", tid);
+    printf("(C) TID: %ld finalizou\n", tid);
     return NULL;
 }
 
