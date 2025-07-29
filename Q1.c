@@ -82,12 +82,7 @@ void *consumer(void *args) {
         pthread_cond_broadcast(&cond_vazio);
         pthread_mutex_unlock(&mutex);
 
-        printf("[");
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            printf("R$ %.0f", valores[i]);
-            if (i < BUFFER_SIZE - 1) printf(", ");
-        }
-        printf("] | MEDIA: R$ %.0f | ITERACAO: %d\n", soma / BUFFER_SIZE, iteracao++);
+        printf("(C) TID: %d | MEDIA: R$ %.0f | ITERACAO: %d\n", tid, soma / BUFFER_SIZE, iteracao++);
     }
 
     printf("(C) TID: %d finalizou\n", tid);
@@ -100,11 +95,8 @@ int main(void) {
     pthread_t produtoras[NUM_PRODUTORAS];
     pthread_t consumidor;
 
-    // fixando valores de id para se assemelhar ao exemplo do pdf...
-    int ids[NUM_PRODUTORAS] = {1000, 1001, 1002};
-
     for (int i = 0; i < NUM_PRODUTORAS; i++) {
-        pthread_create(&produtoras[i], NULL, producer, &ids[i]);
+        pthread_create(&produtoras[i], NULL, producer, NULL);
     }
 
     pthread_create(&consumidor, NULL, consumer, NULL);
