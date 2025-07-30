@@ -4,17 +4,12 @@
 #include <stdlib.h>
 
 #define NUM_TERMS 2000000000
-#define NUM_THREADS 8
+#define NUM_THREADS 16
 #define PARTIAL_NUM_TERMS ((NUM_TERMS)/(NUM_THREADS))
 
 double thrs_sum = 0;
 double total_thr_time = 0;
 pthread_mutex_t lock, time_lock; 
-
-typedef struct {
-  int first_term;
-  double time_spent;
-} thrArgs;
 
 double partialFormula(int first_term) {
   // A funcao ira processar PARTIAL_NUM_TERMS termos
@@ -33,13 +28,12 @@ double partialFormula(int first_term) {
 }
 
 void* partialProcessing(void* args) {
-  thrArgs* thr_data = (thrArgs*) args;
-  // int first_therm = *((int*) args);
-  // free(args);
+  int first_term = *((int*) args);
+  free(args);
 
   // obter tempo de inicio
   clock_t start_time = clock();
-  double sum = partialFormula(thr_data->first_term);
+  double sum = partialFormula(first_term);
 
   // acessar buffer compartilhado
   pthread_mutex_lock(&lock);
@@ -51,10 +45,9 @@ void* partialProcessing(void* args) {
   double total_time = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
 
   // acessar buffer compartilhado de tempo
-  // pthread_mutex_lock(&time_lock);
-  // total_thr_time += total_time;
-  // pthread_mutex_unlock(&time_lock);
-  thr_data->time_spent = total_time;
+  pthread_mutex_lock(&time_lock);
+  total_thr_time += total_time;
+  pthread_mutex_unlock(&time_lock);
 
   // mostrar TID e tempo empregado
   printf("TID: %lu: %.2fs\n", (unsigned long) pthread_self(), total_time);
@@ -80,15 +73,14 @@ int main(void) {
   pthread_t threads[NUM_THREADS];
   pthread_mutex_init(&lock, NULL);      // inicializa o mutex que protege o thrs_sum
   pthread_mutex_init(&time_lock, NULL); // inicializa o mutex que protege o total_thr_time
-  thrArgs args[NUM_THREADS];
 
   // obter tempo de inicio
   start_time = clock();
   for (int t = 0; t < NUM_THREADS; t++) {
-    args[t].first_term = t * PARTIAL_NUM_TERMS;
-    args[t].time_spent = 0;
+    int* arg = malloc(sizeof(int));
+    *arg = t * PARTIAL_NUM_TERMS;
     // criar threads parciais
-    pthread_create(&threads[t], NULL, &partialProcessing, &args[t]);
+    pthread_create(&threads[t], NULL, &partialProcessing, arg);
   }
 
   // esperar threads terminarem
@@ -103,13 +95,7 @@ int main(void) {
 
   // mostrar resultado e tempo empregado
   printf("Total Processo (Paralelo): %.2fs\n", total_time);
-  double tempototalthreads = 0;
-  for (int t = 0; t < NUM_THREADS; t++) {
-    tempototalthreads += args[t].time_spent;
-  }
-
-  printf("Total Threads: %.2fs\n", tempototalthreads);
-  // printf("Total Threads: %.2fs\n", total_thr_time);
+  printf("Total Threads: %.2fs\n", total_thr_time);
   printf("pi (Sequencial) = %.9f, pi (Paralelo) = %.9f\n", f_pi, s_pi);
 
   pthread_mutex_destroy(&lock);
