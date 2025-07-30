@@ -1,11 +1,10 @@
-#include <bits/time.h>
 #include <pthread.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define NUM_TERMS 2000000000
-#define NUM_THREADS 8
+#define NUM_THREADS 2
 #define PARTIAL_NUM_TERMS ((NUM_TERMS)/(NUM_THREADS))
 
 double thrs_sum = 0;
@@ -33,9 +32,7 @@ void* partialProcessing(void* args) {
   free(args);
 
   // obter tempo de inicio
-  struct timespec t0, t1;
-  clock_gettime(CLOCK_MONOTONIC, &t0);
-  // clock_t start_time = clock();
+  clock_t start_time = clock();
   double sum = partialFormula(first_therm);
 
   // acessar buffer compartilhado
@@ -44,10 +41,8 @@ void* partialProcessing(void* args) {
   pthread_mutex_unlock(&lock);
 
   // obter tempo de fim
-  clock_gettime(CLOCK_MONOTONIC, &t1);
-  // clock_t end_time = clock();
-  double total_time = (t1.tv_sec  - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec)*1e-9;
-  // double total_time2 = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
+  clock_t end_time = clock();
+  double total_time = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
 
   // acessar buffer compartilhado de tempo
   pthread_mutex_lock(&time_lock);
@@ -56,7 +51,6 @@ void* partialProcessing(void* args) {
 
   // mostrar TID e tempo empregado
   printf("TID: %lu: %.2fs\n", (unsigned long) pthread_self(), total_time);
-  // printf("TID: %lu: clock(): %.2fs\n", (unsigned long) pthread_self(), total_time2);
   pthread_exit(NULL);
 }
 
@@ -65,21 +59,17 @@ int main(void) {
   struct timespec m0, m1;
 
   clock_t start_time = clock(); // Captura o tempo inicial
-  // clock_gettime(CLOCK_MONOTONIC, &m0); // wall-clock
   double signal = 1.0;
   for (int k = 0; k < NUM_TERMS; k++) {
     f_pi += signal / (2 * k + 1);
     signal *= -1.0;
   }
   f_pi *= 4;
-  // clock_gettime(CLOCK_MONOTONIC, &m1);
   clock_t end_time = clock(); // Captura o tempo final
 
   // Calcula o tempo de execução em segundos
   double total_time = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
-  // double gettime = (m1.tv_sec  - m0.tv_sec) + (m1.tv_nsec - m0.tv_nsec)*1e-9;
   printf("Tempo Processo (Sequencial): %.2fs\n", total_time);
-  // printf("Tempo Processo Gettime(Sequencial): %.2fs\n", gettime);
 
   pthread_t threads[NUM_THREADS];
   pthread_mutex_init(&lock, NULL);      // inicializa o mutex que protege o thrs_sum
@@ -87,7 +77,6 @@ int main(void) {
 
   // obter tempo de inicio
   start_time = clock();
-  // clock_gettime(CLOCK_MONOTONIC, &m0);
   for (int t = 0; t < NUM_THREADS; t++) {
     int* arg = malloc(sizeof(int));
     *arg = t * PARTIAL_NUM_TERMS;
@@ -104,9 +93,6 @@ int main(void) {
   // obter tempo de fim
   end_time = clock();
   total_time = ((double) (end_time - start_time)) / CLOCKS_PER_SEC;
-  // clock_gettime(CLOCK_MONOTONIC, &m1);
-  // gettime = (m1.tv_sec  - m0.tv_sec) + (m1.tv_nsec - m0.tv_nsec)*1e-9;
-  // printf("Tempo Processo Gettime(paralelo): %.2fs\n", gettime);
 
   // mostrar resultado e tempo empregado
   printf("Total Processo (Paralelo): %.2fs\n", total_time);
