@@ -7,13 +7,12 @@
 #define BUFFER_SIZE 5
 #define NUM_PRODUTORAS 3
 
-float buffer[BUFFER_SIZE];
+int buffer[BUFFER_SIZE];
 int in = 0, count = 0;
 int produtoras_finalizadas = 0;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond_cheio = PTHREAD_COND_INITIALIZER;
-pthread_cond_t cond_vazio = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex;
+pthread_cond_t cond_cheio, cond_vazio;
 
 void *producer(void *args) {
   pthread_t tid = pthread_self();
@@ -24,20 +23,19 @@ void *producer(void *args) {
   } while (iteracoes % 5 != 0);
 
   for (int i = 0; i < iteracoes; i++) {
-    float valor = (rand() % 1000) + 1;
+    int valor = (rand() % 1000) + 1;
 
     pthread_mutex_lock(&mutex);
     while (count == BUFFER_SIZE)
         pthread_cond_wait(&cond_vazio, &mutex);
 
     buffer[in] = valor;
-    int pos = in;
     in = (in + 1) % BUFFER_SIZE;
     count++;
 
     pthread_cond_signal(&cond_cheio);
 
-    printf("(P) TID: %ld | VALOR: R$ %.0f | ITERACAO: %d\n", tid, valor, i + 1);
+    printf("(P) TID: %ld | VALOR: R$ %4d | ITERACAO: %2d\n", tid, valor, i + 1);
 
     pthread_mutex_unlock(&mutex);
 
@@ -51,7 +49,7 @@ void *producer(void *args) {
 
   printf("(P) TID: %ld finalizou\n", tid);
 
-  return NULL;
+  pthread_exit(NULL);
 }
 
 void *consumer(void *args) {
@@ -69,7 +67,7 @@ void *consumer(void *args) {
       break;
     }
 
-    float valores[BUFFER_SIZE];
+    int valores[BUFFER_SIZE];
     float soma = 0;
 
     for (int i = 0; i < BUFFER_SIZE; i++) {
@@ -82,15 +80,18 @@ void *consumer(void *args) {
     pthread_cond_broadcast(&cond_vazio);
     pthread_mutex_unlock(&mutex);
 
-    printf("(C) TID: %ld | MEDIA: R$ %.0f | ITERACAO: %d\n", tid, soma / BUFFER_SIZE, iteracao++);
+    printf("(C) TID: %ld | MEDIA: R$ %4.0f | ITERACAO: %2d\n", tid, soma / BUFFER_SIZE, iteracao++);
   }
 
   printf("(C) TID: %ld finalizou\n", tid);
-  return NULL;
+  pthread_exit(NULL);
 }
 
 int main(void) {
   srand(time(NULL));
+  pthread_mutex_init(&mutex, NULL);
+  pthread_cond_init(&cond_cheio, NULL);
+  pthread_cond_init(&cond_vazio, NULL);
 
   pthread_t produtoras[NUM_PRODUTORAS];
   pthread_t consumidor;
@@ -106,5 +107,8 @@ int main(void) {
 
   pthread_join(consumidor, NULL);
 
+  pthread_cond_destroy(&cond_cheio);
+  pthread_cond_destroy(&cond_vazio);
+  pthread_mutex_destroy(&mutex);
   return 0;
 }
